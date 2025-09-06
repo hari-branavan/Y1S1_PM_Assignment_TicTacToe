@@ -1,0 +1,6 @@
+//NOTE TO SELF
+//PART 1
+//-need to add comments for each function to explain what it does
+//-need to add error handling for malloc
+//-need to make file handling for storing state of game
+
