@@ -183,42 +183,49 @@ char switchSign(char sign){
 
 bool checkWin(char **board, int n){
     
-    for (int row = 0; row < n-2; row++){
-        for (int col = 0; col < n-2; col++){
-            
-            // Horizontal check
-            if (board[row][col] != '-' && 
-                (board[row][col] == board[row][col+1] && 
-                board[row][col+1] == board[row][col+2])){
-                    
-                    return true;
-            }
-            
-            // Vertical check
-            if (board[row][col] != '-' && 
-                board[row][col] == board[row+1][col] && 
-                board[row+1][col] == board[row+2][col])
-                {
-                
-                    return true;
-            }
-            
-            // Diagonal check
-            if ((board[row][col] != '-' &&
-		(board[row][col] == board[row+1][col+1] && 
-		 board[row+1][col+1] == board[row+2][col+2])
-		) 
-		||
-		(board[row][col+2] != '-' && 
-		(board[row][col+2] == board[row+1][col+1] && 
-		 board[row+1][col+1] == board[row+2][col])
-		))
-                {
-                    return true;
-            }
-        }
+// Checking for Horizontal Wins
+    for (int row = 0; row < n; row++){
+	    for (int col = 0; col < n-2; col++){
+		    if (board[row][col] != '-' && 
+			(board[row][col] == board[row][col+1] && 
+			 board[row][col+1] == board[row][col+2])
+			){
+			    return true;
+		    }
+	    }
     }
+
+// Checking for Vertical Wins
+
+   for (int row = 0; row < n-2; row++){
+	   for (int col = 0; col < n; col++){
+		   if (board[row][col] != '-' && 
+		       (board[row][col] == board[row+1][col] &&
+			board[row+1][col] == board[row+2][col])
+		       ){
+			   return true;
+		   }
+	   } 
+   }
+
+// Checking for Diagonal Wins
+    for (int row = 0; row < n-2; row++){
+	    for (int col = 0; col < n-2; col++){
+		    if ((board[row][col] != '-' && 
+			(board[row][col] == board[row+1][col+1] && 
+			 board[row+1][col+1] == board[row+2][col+2])) ||
+			(board[row][col+2] != '-' &&
+			 (board[row][col+2] == board[row+1][col+1] &&
+			  board[row+1][col+1] == board[row+2][col])
+			 )
+			){
+			    return true;
+		    }
+	    }
+    }
+
     return false;
+
 }
 
 bool checkDraw(char **board, int n){
