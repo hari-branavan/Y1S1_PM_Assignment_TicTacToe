@@ -2,22 +2,22 @@ Player X's turn.
 Player X made a move at row - 1, column - 1.
 Game Ongoing...
 --------------------------
-Player O's turn.
-Player O made a move at row - 2, column - 2.
+Computer's turn.
+Computer made a move at row - 2, column - 3.
 Game Ongoing...
 --------------------------
 Player X's turn.
 Player X made a move at row - 3, column - 3.
 Game Ongoing...
 --------------------------
-Player O's turn.
-Player O made a move at row - 3, column - 2.
+Computer's turn.
+Computer made a move at row - 2, column - 2.
 Game Ongoing...
 --------------------------
 Player X's turn.
 Player X made a move at row - 1, column - 3.
 Game Ongoing...
 --------------------------
-Player O's turn.
-Player O made a move at row - 1, column - 2.
-Player O won!
+Computer's turn.
+Computer made a move at row - 2, column - 1.
+Computer won!
