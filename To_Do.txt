@@ -1,4 +1,0 @@
-//NOTE TO SELF
-//PART 1
-//-need to add error handling for malloc
-

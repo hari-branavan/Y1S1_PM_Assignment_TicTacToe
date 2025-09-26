@@ -10,12 +10,17 @@ typedef struct {
     int col;
 } Move;
 
+typedef struct {
+    char playerSign;
+    bool isHuman; // true for human, false for computer
+} Player;
+
 //Function prototypes
 
 char** createBoard(int n);
 void displayBoard(char **board, int n);
 void freeBoard(char **board, int n);
-bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign, int inputResult, char **board);
+bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign, int inputResult, char **board, Player players[]);
 void validMove(FILE *gameState, char **board, int n, char sign, int *mRow, int *mColumn, int *inputResult);
 char switchSign(char sign, int mode);
 bool checkWin(char **board, int n);
@@ -23,6 +28,7 @@ bool checkDraw(char **board, int n);
 void computerMove(FILE *gameState, char **board, int n, char sign);
 Move tryComputerWin(char **board, char sign, int n);
 Move tryComputerBlock(char **board, char sign, int n);
+void ThreePlayerConfig(Player players[]);
 
 //Main function
 
@@ -30,6 +36,7 @@ int main(){
     int n, mode, mRow, mColumn, inputResult;
     char sign = 'X';
     bool gameOver = false;
+    Player players[3];
 
     srand(time(NULL));
 
@@ -57,8 +64,6 @@ int main(){
 
     char **board = createBoard(n);
 
-    displayBoard(board, n);
-
     printf("\nSelect game mode: \n1. Two Players(User vs User)\n2. User vs Computer\n3. Three players\nEnter choice (1-3): ");
     int modeResult = scanf("%d", &mode);
 
@@ -74,8 +79,14 @@ int main(){
         modeResult = scanf("%d", &mode);
     }
 
+    if (mode == 3){
+        ThreePlayerConfig(players);
+    }
+    
+    displayBoard(board, n);
+    
     while (!gameOver){
-        gameOver = playTurn(gameState, n, mode, mRow, mColumn, sign, inputResult, board);
+        gameOver = playTurn(gameState, n, mode, mRow, mColumn, sign, inputResult, board, players);
         
         sign = switchSign(sign, mode);
         displayBoard(board, n);
@@ -88,6 +99,51 @@ int main(){
 }
 
 //Functions
+
+void ThreePlayerConfig(Player players[]){
+    printf("\nAt least one player must be human as required.\n\n");
+    printf("\nConfiguring 3-player mode:\n");
+    printf("Player X goes first\n");
+    printf("Player O goes second\n");
+    printf("Player Z goes third\n\n");
+
+    players[0].playerSign = 'X';
+    players[1].playerSign = 'O';
+    players[2].playerSign = 'Z';
+
+    for (int i = 0; i < 3; i++){
+        int choice;
+        printf("Configure Player %c:\n", players[i].playerSign);
+        printf("1. Human Player\n");
+        printf("2. Computer Player\n");
+        printf("Enter choice (1-2): ");
+
+        int choiceResult = scanf("%d", &choice);
+
+        while (choice < 1 || choice > 2 || choiceResult != 1) {
+            printf("\nInvalid choice. Please enter 1 for Human or 2 for Computer: ");
+            
+            // Clear input buffer
+            char buff = getchar();
+            while (buff != '\n') {
+                buff = getchar();
+            }
+            
+            choiceResult = scanf("%d", &choice);
+        }
+
+        players[i].isHuman = (choice == 1);
+
+        if (players[i].isHuman) {
+            printf("\nPlayer %c configured as Human Player\n\n", players[i].playerSign);
+        } else {
+            printf("\nPlayer %c configured as Computer Player\n\n", players[i].playerSign);
+        }
+    }
+
+    printf("3 Player game configuration complete!\n\n");
+}
+
 
 char** createBoard(int n){
     char **board = malloc(n * sizeof(char*));
@@ -159,7 +215,9 @@ void freeBoard(char **board, int n){
     free(board);
 }
 
-bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign, int inputResult, char **board){
+bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign, int inputResult, char **board, Player players[]){
+    int currentPlayerIndex = -1;
+
     switch (mode){
         case 1:
             if (sign == 'X'){
@@ -227,25 +285,36 @@ bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign
             break;
 
         case 3:
-            if (sign == 'X'){
-                printf("\nPlayer %c's turn. Please enter coordinate wise - [row][space][column]: ", sign);
-                inputResult = scanf("%d %d", &mRow, &mColumn);
-            } else if (sign == 'O'){
-                printf("\nPlayer %c's turn. Please enter coordinate wise - [row][space][column]: ", sign);
-                inputResult = scanf("%d %d", &mRow, &mColumn);
-            } else {
-                printf("\nPlayer %c's turn. Please enter coordinate wise - [row][space][column]: ", sign);
-                inputResult = scanf("%d %d", &mRow, &mColumn);
+            for (int i = 0; i < 3; i++) {
+                if (players[i].playerSign == sign) {
+                    currentPlayerIndex = i;
+                    break;
+                }
             }
-            
-            fprintf(gameState, "Player %c's turn.\n", sign);
-            
-            printf("\n");
-            validMove(gameState, board, n, sign, &mRow, &mColumn, &inputResult);
+
+            // Determine if current player is human or computer
+            if (players[currentPlayerIndex].isHuman) {
+                printf("\nPlayer %c's turn. Please enter coordinate wise - [row][space][column]: ", sign);
+                fprintf(gameState, "Player %c's turn.\n", sign);
+                inputResult = scanf("%d %d", &mRow, &mColumn);
+
+                printf("\n");
+                validMove(gameState, board, n, sign, &mRow, &mColumn, &inputResult);
+            } else {
+                printf("\nComputer (Player %c)'s turn: \n", sign);
+                fprintf(gameState, "Computer (Player %c)'s turn.\n", sign);
+                computerMove(gameState, board, n, sign);
+                printf("\n");
+            }
 
             if (checkWin(board,n) == 1){
-                printf("Player %c Wins!\n\n", sign);
-                fprintf(gameState, "\nPlayer %c won!\n", sign);
+                if (players[currentPlayerIndex].isHuman) {
+                    printf("Player %c Wins!\n\n", sign);
+                    fprintf(gameState, "\nPlayer %c won!\n", sign);
+                } else {
+                    printf("Computer (Player %c) Wins!\n\n", sign);
+                    fprintf(gameState, "\nComputer (Player %c) won!\n", sign);
+                }
                 return true;
             } else if (checkDraw(board, n) == 1){
                 printf("It's a draw!\n");
@@ -255,6 +324,7 @@ bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign
                 fprintf(gameState, "\nGame Ongoing...");
                 fprintf(gameState, "\n--------------------------\n");
             }
+
             break;
     }
     return false; // Game continues
@@ -368,7 +438,6 @@ char switchSign(char sign, int mode){
             }
             break;    
     }
-    return 'X'; // Default fallback
 }
 
 bool checkWin(char **board, int n){
@@ -522,101 +591,123 @@ Move tryComputerWin(char **board, char sign, int n){
 }
 
 Move tryComputerBlock(char **board, char sign, int n){ 
-    char opponent = 'X';
     Move coords = {-1, -1};
+    char opponent;
+    char possibleOpponents[] = {'X','O','Z'};
 
-    // Horizontal Check
-    for (int row = 0; row < n; row++){
-        for (int col = 0; col < n-2; col++){
-            // XX-
-            if (board[row][col] == opponent && board[row][col+1] == opponent && board[row][col+2] == '-') {
-                coords.row = row;
-                coords.col = col+2;
-                return coords;
-            }
-            // X-X
-            if (board[row][col] == opponent && board[row][col+1] == '-' && board[row][col+2] == opponent) {
-                coords.row = row;
-                coords.col = col+1;
-                return coords;
-            }
-            // -XX
-            if (board[row][col] == '-' && board[row][col+1] == opponent && board[row][col+2] == opponent) {
-                coords.row = row;
-                coords.col = col;
-                return coords;
+    for (int opIndex = 0; opIndex < 3; opIndex++){
+        opponent = possibleOpponents[opIndex];
+
+        if (opponent == sign){
+            continue;
+        }
+
+        bool opponentExists = false;
+        for (int i = 0; i < n && !opponentExists; i++){
+            for (int j = 0; j < n && !opponentExists; j++){
+                if (board[i][j] == opponent){
+                    opponentExists = true;
+                }
             }
         }
-    }
 
-    // Vertical Check
-    for (int row = 0; row < n-2; row++){
-        for (int col = 0; col < n; col++){
-            // XX-
-            if (board[row][col] == opponent && board[row+1][col] == opponent && board[row+2][col] == '-') {
-                coords.row = row+2;
-                coords.col = col;
-                return coords;
-            }
-            // X-X
-            if (board[row][col] == opponent && board[row+1][col] == '-' && board[row+2][col] == opponent) {
-                coords.row = row+1;
-                coords.col = col;
-                return coords;
-            }
-            // -XX
-            if (board[row][col] == '-' && board[row+1][col] == opponent && board[row+2][col] == opponent) {
-                coords.row = row;
-                coords.col = col;
-                return coords;
+        if (!opponentExists){
+            continue;
+        }
+
+        // Horizontal Check
+        for (int row = 0; row < n; row++){
+            for (int col = 0; col < n-2; col++){
+                // XX-
+                if (board[row][col] == opponent && board[row][col+1] == opponent && board[row][col+2] == '-') {
+                    coords.row = row;
+                    coords.col = col+2;
+                    return coords;
+                }
+                // X-X
+                if (board[row][col] == opponent && board[row][col+1] == '-' && board[row][col+2] == opponent) {
+                    coords.row = row;
+                    coords.col = col+1;
+                    return coords;
+                }
+                // -XX
+                if (board[row][col] == '-' && board[row][col+1] == opponent && board[row][col+2] == opponent) {
+                    coords.row = row;
+                    coords.col = col;
+                    return coords;
+                }
             }
         }
-    }
 
-    // Diagonal Check (top-left to bottom-right)
-    for (int row = 0; row < n-2; row++){
-        for (int col = 0; col < n-2; col++){
-            // XX-
-            if (board[row][col] == opponent && board[row+1][col+1] == opponent && board[row+2][col+2] == '-') {
-                coords.row = row+2;
-                coords.col = col+2;
-                return coords;
-            }
-            // X-X
-            if (board[row][col] == opponent && board[row+1][col+1] == '-' && board[row+2][col+2] == opponent) {
-                coords.row = row+1;
-                coords.col = col+1;
-                return coords;
-            }
-            // -XX
-            if (board[row][col] == '-' && board[row+1][col+1] == opponent && board[row+2][col+2] == opponent) {
-                coords.row = row;
-                coords.col = col;
-                return coords;
+        // Vertical Check
+        for (int row = 0; row < n-2; row++){
+            for (int col = 0; col < n; col++){
+                // XX-
+                if (board[row][col] == opponent && board[row+1][col] == opponent && board[row+2][col] == '-') {
+                    coords.row = row+2;
+                    coords.col = col;
+                    return coords;
+                }
+                // X-X
+                if (board[row][col] == opponent && board[row+1][col] == '-' && board[row+2][col] == opponent) {
+                    coords.row = row+1;
+                    coords.col = col;
+                    return coords;
+                }
+                // -XX
+                if (board[row][col] == '-' && board[row+1][col] == opponent && board[row+2][col] == opponent) {
+                    coords.row = row;
+                    coords.col = col;
+                    return coords;
+                }
             }
         }
-    }
 
-    // Diagonal Check (top-right to bottom-left)
-    for (int row = 0; row < n-2; row++){
-        for (int col = 2; col < n; col++){
-            // XX-
-            if (board[row][col] == opponent && board[row+1][col-1] == opponent && board[row+2][col-2] == '-') {
-                coords.row = row+2;
-                coords.col = col-2;
-                return coords;
+        // Diagonal Check (top-left to bottom-right)
+        for (int row = 0; row < n-2; row++){
+            for (int col = 0; col < n-2; col++){
+                // XX-
+                if (board[row][col] == opponent && board[row+1][col+1] == opponent && board[row+2][col+2] == '-') {
+                    coords.row = row+2;
+                    coords.col = col+2;
+                    return coords;
+                }
+                // X-X
+                if (board[row][col] == opponent && board[row+1][col+1] == '-' && board[row+2][col+2] == opponent) {
+                    coords.row = row+1;
+                    coords.col = col+1;
+                    return coords;
+                }
+                // -XX
+                if (board[row][col] == '-' && board[row+1][col+1] == opponent && board[row+2][col+2] == opponent) {
+                    coords.row = row;
+                    coords.col = col;
+                    return coords;
+                }
             }
-            // X-X
-            if (board[row][col] == opponent && board[row+1][col-1] == '-' && board[row+2][col-2] == opponent) {
-                coords.row = row+1;
-                coords.col = col-1;
-                return coords;
-            }
-            // -XX
-            if (board[row][col] == '-' && board[row+1][col-1] == opponent && board[row+2][col-2] == opponent) {
-                coords.row = row;
-                coords.col = col;
-                return coords;
+        }
+
+        // Diagonal Check (top-right to bottom-left)
+        for (int row = 0; row < n-2; row++){
+            for (int col = 2; col < n; col++){
+                // XX-
+                if (board[row][col] == opponent && board[row+1][col-1] == opponent && board[row+2][col-2] == '-') {
+                    coords.row = row+2;
+                    coords.col = col-2;
+                    return coords;
+                }
+                // X-X
+                if (board[row][col] == opponent && board[row+1][col-1] == '-' && board[row+2][col-2] == opponent) {
+                    coords.row = row+1;
+                    coords.col = col-1;
+                    return coords;
+                }
+                // -XX
+                if (board[row][col] == '-' && board[row+1][col-1] == opponent && board[row+2][col-2] == opponent) {
+                    coords.row = row;
+                    coords.col = col;
+                    return coords;
+                }
             }
         }
     }
