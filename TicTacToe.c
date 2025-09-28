@@ -23,7 +23,7 @@ void freeBoard(char **board, int n);
 bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign, int inputResult, char **board, Player players[]);
 void validMove(FILE *gameState, char **board, int n, char sign, int *mRow, int *mColumn, int *inputResult);
 char switchSign(char sign, int mode);
-bool checkWin(char **board, int n);
+bool checkWin(char **board, int n, char sign);
 bool checkDraw(char **board, int n);
 void computerMove(FILE *gameState, char **board, int n, char sign);
 Move tryComputerWin(char **board, char sign, int n);
@@ -83,6 +83,7 @@ int main(){
         ThreePlayerConfig(players);
     }
     
+    printf("\n");
     displayBoard(board, n);
     
     while (!gameOver){
@@ -90,7 +91,7 @@ int main(){
         
         sign = switchSign(sign, mode);
         displayBoard(board, n);
-        printf("\n");
+        // printf("\n");
     }
 
     freeBoard(board, n);
@@ -101,7 +102,7 @@ int main(){
 //Functions
 
 void ThreePlayerConfig(Player players[]){
-    printf("\nAt least one player must be human as required.\n\n");
+    printf("\nAt least one player must be human as required.\n");
     printf("\nConfiguring 3-player mode:\n");
     printf("Player X goes first\n");
     printf("Player O goes second\n");
@@ -233,7 +234,7 @@ bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign
             printf("\n");
             validMove(gameState, board, n, sign, &mRow, &mColumn, &inputResult);
 
-            if (checkWin(board,n) == 1){
+            if (checkWin(board, n, sign) == 1){
                 printf("Player %c Wins!\n\n", sign);
                 fprintf(gameState, "\nPlayer %c won!\n", sign);
                 return true;
@@ -264,7 +265,7 @@ bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign
             printf("\n");
 
             // Checking for draw or win else game is continuing
-            if (checkWin(board, n)) {
+            if (checkWin(board, n, sign)) {
                 if (sign == 'X'){
                     printf("\nPlayer %c wins!\n\n", sign);
                     fprintf(gameState, "\nPlayer %c won!\n", sign);
@@ -307,7 +308,7 @@ bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign
                 printf("\n");
             }
 
-            if (checkWin(board,n) == 1){
+            if (checkWin(board, n, sign) == 1){
                 if (players[currentPlayerIndex].isHuman) {
                     printf("Player %c Wins!\n\n", sign);
                     fprintf(gameState, "\nPlayer %c won!\n", sign);
@@ -317,7 +318,7 @@ bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign
                 }
                 return true;
             } else if (checkDraw(board, n) == 1){
-                printf("It's a draw!\n");
+                printf("It's a draw!\n\n");
                 fprintf(gameState, "\nIt's a draw!\n");
                 return true;
             } else {
@@ -440,40 +441,59 @@ char switchSign(char sign, int mode){
     }
 }
 
-bool checkWin(char **board, int n){
+bool checkWin(char **board, int n, char sign){
     // Diagonal check
-    for (int row = 0; row < n-2; row++){
-        for (int col = 0; col < n-2; col++){
-            if ((board[row][col] != '-' && (board[row][col] == board[row+1][col+1] && board[row+1][col+1] == board[row+2][col+2])) ||
-                (board[row][col+2] != '-' && (board[row][col+2] == board[row+1][col+1] && board[row+1][col+1] == board[row+2][col])))
-                {
-                    return true;
-            }
+    bool win = true;
+
+    for (int k = 0; k < n; k++) {
+        if (board[k][k] != sign) {
+            win = false;
+            break;
         }
     }
+    if (win) return true;
+
+    // Anti-diagonal check
+    win = true;
+
+    for (int k = 0; k < n; k++) {
+        if (board[k][n-1-k] != sign) {
+            win = false;
+            break;
+        }
+    }
+    if (win) return true;
+
     // Horizontal check
     for (int row = 0; row < n; row++){
-        for (int col = 0; col < n-2; col++){
-            if (board[row][col] != '-' && 
-                board[row][col] == board[row][col+1] && 
-                board[row][col+1] == board[row][col+2])
-                {
-                    return true;
+        for (int col = 0; col < 1; col++){
+            bool win = true;
+
+            for (int k = 0; k < n; k++){
+                if (board[row][col+k] != sign){
+                    win = false;
+                    break;
+                }
             }
+            if (win) return true;
         }
     }
+
     // Vertical check
-    for (int row = 0; row < n-2; row++){
+    for (int row = 0; row < 1; row++){
         for (int col = 0; col < n; col++){
+            bool win = true;
             
-            if (board[row][col] != '-' && 
-                board[row][col] == board[row+1][col] && 
-                board[row+1][col] == board[row+2][col])
-                {
-                    return true;
+            for (int k = 0; k < n; k++) {
+                if (board[row + k][col] != sign) {
+                    win = false;
+                    break;
+                }
             }
+            if (win) return true;
         }
-    }        
+    }
+
     return false;
 }
 
@@ -493,46 +513,50 @@ Move tryComputerWin(char **board, char sign, int n){
 
     // Horizontal Check
     for (int row = 0; row < n; row++){
-        for (int col = 0; col < n-2; col++){
-            // OO-
-            if (board[row][col] == sign && board[row][col+1] == sign && board[row][col+2] == '-') {
-                coords.row = row;
-                coords.col = col+2;
-                return coords;
+        for (int col = 0; col < 1; col++){
+            int sameCount = 0;
+            int emptyPos = -1;
+
+            for (int k = 0; k < n; k++){
+                if (board[row][col+k] == sign){
+                    sameCount ++;
+                } else if (board[row][col+k] == '-'){
+                    if (emptyPos == -1){
+                        emptyPos = k;                        
+                    } else {
+                        break;
+                    }
+                }
             }
-            // O-O
-            if (board[row][col] == sign && board[row][col+1] == '-' && board[row][col+2] == sign) {
+
+            if (sameCount == n-1 && emptyPos != -1){
                 coords.row = row;
-                coords.col = col+1;
-                return coords;
-            }
-            // -OO
-            if (board[row][col] == '-' && board[row][col+1] == sign && board[row][col+2] == sign) {
-                coords.row = row;
-                coords.col = col;
+                coords.col = col + emptyPos;
                 return coords;
             }
         }
     }
 
     // Vertical Check
-    for (int row = 0; row < n-2; row++){
+    for (int row = 0; row < 1; row++){
         for (int col = 0; col < n; col++){
-            // OO-
-            if (board[row][col] == sign && board[row+1][col] == sign && board[row+2][col] == '-') {
-                coords.row = row+2;
-                coords.col = col;
-                return coords;
+            int sameCount = 0;
+            int emptyPos = -1;
+
+            for (int k = 0; k < n; k++){
+                if (board[row+k][col] == sign){
+                    sameCount++;
+                } else if (board[row+k][col] == '-'){
+                    if (emptyPos == -1){
+                        emptyPos = k;                        
+                    } else {
+                        break;
+                    }
+                }
             }
-            // O-O
-            if (board[row][col] == sign && board[row+1][col] == '-' && board[row+2][col] == sign) {
-                coords.row = row+1;
-                coords.col = col;
-                return coords;
-            }
-            // -OO
-            if (board[row][col] == '-' && board[row+1][col] == sign && board[row+2][col] == sign) {
-                coords.row = row;
+
+            if (sameCount == n-1 && emptyPos != -1){
+                coords.row = row + emptyPos;
                 coords.col = col;
                 return coords;
             }
@@ -540,51 +564,49 @@ Move tryComputerWin(char **board, char sign, int n){
     }
 
     // Diagonal Check (top-left to bottom-right)
-    for (int row = 0; row < n-2; row++){
-        for (int col = 0; col < n-2; col++){
-            // OO-
-            if (board[row][col] == sign && board[row+1][col+1] == sign && board[row+2][col+2] == '-') {
-                coords.row = row+2;
-                coords.col = col+2;
-                return coords;
-            }
-            // O-O
-            if (board[row][col] == sign && board[row+1][col+1] == '-' && board[row+2][col+2] == sign) {
-                coords.row = row+1;
-                coords.col = col+1;
-                return coords;
-            }
-            // -OO
-            if (board[row][col] == '-' && board[row+1][col+1] == sign && board[row+2][col+2] == sign) {
-                coords.row = row;
-                coords.col = col;
-                return coords;
+    int sameCount = 0;
+    int emptyPos = -1;
+
+    for (int k = 0; k < n; k++){
+        if (board[k][k] == sign){
+            sameCount++;
+        } else if (board[k][k] == '-'){
+            if (emptyPos == -1){
+                emptyPos = k;
+            } else {
+                emptyPos = -1;
+                break;
             }
         }
     }
+    
+    if (sameCount == n-1 && emptyPos != -1){
+        coords.row = emptyPos;
+        coords.col = emptyPos;
+        return coords;
+    }
 
-    // Diagonal Check (top-right to bottom-left)
-    for (int row = 0; row < n-2; row++){
-        for (int col = 2; col < n; col++){
-            // OO-
-            if (board[row][col] == sign && board[row+1][col-1] == sign && board[row+2][col-2] == '-') {
-                coords.row = row+2;
-                coords.col = col-2;
-                return coords;
-            }
-            // O-O
-            if (board[row][col] == sign && board[row+1][col-1] == '-' && board[row+2][col-2] == sign) {
-                coords.row = row+1;
-                coords.col = col-1;
-                return coords;
-            }
-            // -OO
-            if (board[row][col] == '-' && board[row+1][col-1] == sign && board[row+2][col-2] == sign) {
-                coords.row = row;
-                coords.col = col;
-                return coords;
+    // Anti-diagonal Check (top-right to bottom-left)
+    sameCount = 0;
+    emptyPos = -1;
+
+    for (int k = 0; k < n; k++){
+        if (board[k][n - 1 - k] == sign){
+            sameCount++;
+        } else if (board[k][n - 1 - k] == '-'){
+            if (emptyPos == -1){
+                emptyPos = k;
+            } else {
+                emptyPos = -1;
+                break;
             }
         }
+    }
+    
+    if (sameCount == n-1 && emptyPos != -1){
+        coords.row = emptyPos;
+        coords.col = n - 1 - emptyPos;
+        return coords;
     }
 
     return coords; // no winning move found
@@ -592,11 +614,11 @@ Move tryComputerWin(char **board, char sign, int n){
 
 Move tryComputerBlock(char **board, char sign, int n){ 
     Move coords = {-1, -1};
-    char opponent;
+    
     char possibleOpponents[] = {'X','O','Z'};
 
     for (int opIndex = 0; opIndex < 3; opIndex++){
-        opponent = possibleOpponents[opIndex];
+        char opponent = possibleOpponents[opIndex];
 
         if (opponent == sign){
             continue;
@@ -617,46 +639,50 @@ Move tryComputerBlock(char **board, char sign, int n){
 
         // Horizontal Check
         for (int row = 0; row < n; row++){
-            for (int col = 0; col < n-2; col++){
-                // XX-
-                if (board[row][col] == opponent && board[row][col+1] == opponent && board[row][col+2] == '-') {
-                    coords.row = row;
-                    coords.col = col+2;
-                    return coords;
+            for (int col = 0; col < 1; col++){
+                int oppCount = 0;
+                int emptyPos = -1;
+
+                for (int k = 0; k < n; k++){
+                    if (board[row][col + k] == opponent){
+                        oppCount++;
+                    } else if (board[row][col + k] == '-'){
+                        if (emptyPos == -1){
+                            emptyPos = k;
+                        } else {
+                            break;
+                        }
+                    }
                 }
-                // X-X
-                if (board[row][col] == opponent && board[row][col+1] == '-' && board[row][col+2] == opponent) {
+
+                if (oppCount == (n-1) && emptyPos != -1){
                     coords.row = row;
-                    coords.col = col+1;
-                    return coords;
-                }
-                // -XX
-                if (board[row][col] == '-' && board[row][col+1] == opponent && board[row][col+2] == opponent) {
-                    coords.row = row;
-                    coords.col = col;
+                    coords.col = col + emptyPos;
                     return coords;
                 }
             }
         }
 
         // Vertical Check
-        for (int row = 0; row < n-2; row++){
+        for (int row = 0; row < 1; row++){
             for (int col = 0; col < n; col++){
-                // XX-
-                if (board[row][col] == opponent && board[row+1][col] == opponent && board[row+2][col] == '-') {
-                    coords.row = row+2;
-                    coords.col = col;
-                    return coords;
+                int oppCount = 0;
+                int emptyPos = -1;
+
+                for (int k = 0; k < n; k++){
+                    if (board[row + k][col] == opponent){
+                        oppCount++;
+                    } else if (board[row + k][col] == '-'){
+                        if (emptyPos == -1){
+                            emptyPos = k;
+                        } else {
+                            break;
+                        }
+                    }
                 }
-                // X-X
-                if (board[row][col] == opponent && board[row+1][col] == '-' && board[row+2][col] == opponent) {
-                    coords.row = row+1;
-                    coords.col = col;
-                    return coords;
-                }
-                // -XX
-                if (board[row][col] == '-' && board[row+1][col] == opponent && board[row+2][col] == opponent) {
-                    coords.row = row;
+
+                if (oppCount == (n-1) && emptyPos != -1){
+                    coords.row = row + emptyPos;
                     coords.col = col;
                     return coords;
                 }
@@ -664,51 +690,49 @@ Move tryComputerBlock(char **board, char sign, int n){
         }
 
         // Diagonal Check (top-left to bottom-right)
-        for (int row = 0; row < n-2; row++){
-            for (int col = 0; col < n-2; col++){
-                // XX-
-                if (board[row][col] == opponent && board[row+1][col+1] == opponent && board[row+2][col+2] == '-') {
-                    coords.row = row+2;
-                    coords.col = col+2;
-                    return coords;
-                }
-                // X-X
-                if (board[row][col] == opponent && board[row+1][col+1] == '-' && board[row+2][col+2] == opponent) {
-                    coords.row = row+1;
-                    coords.col = col+1;
-                    return coords;
-                }
-                // -XX
-                if (board[row][col] == '-' && board[row+1][col+1] == opponent && board[row+2][col+2] == opponent) {
-                    coords.row = row;
-                    coords.col = col;
-                    return coords;
+        int oppCount = 0;
+        int emptyPos = -1;
+
+        for (int k = 0; k < n; k++){
+            if (board[k][k] == opponent){
+                oppCount++;
+            } else if (board[k][k] == '-'){
+                if (emptyPos == -1){
+                    emptyPos = k;
+                } else {
+                    emptyPos = -1;
+                    break;
                 }
             }
         }
 
+        if (oppCount == (n-1) && emptyPos != -1){
+            coords.row = emptyPos;
+            coords.col = emptyPos;
+            return coords;
+        }
+
         // Diagonal Check (top-right to bottom-left)
-        for (int row = 0; row < n-2; row++){
-            for (int col = 2; col < n; col++){
-                // XX-
-                if (board[row][col] == opponent && board[row+1][col-1] == opponent && board[row+2][col-2] == '-') {
-                    coords.row = row+2;
-                    coords.col = col-2;
-                    return coords;
-                }
-                // X-X
-                if (board[row][col] == opponent && board[row+1][col-1] == '-' && board[row+2][col-2] == opponent) {
-                    coords.row = row+1;
-                    coords.col = col-1;
-                    return coords;
-                }
-                // -XX
-                if (board[row][col] == '-' && board[row+1][col-1] == opponent && board[row+2][col-2] == opponent) {
-                    coords.row = row;
-                    coords.col = col;
-                    return coords;
+        oppCount = 0;
+        emptyPos = -1;
+
+        for (int k = 0; k < n; k++){
+            if (board[k][n - 1 - k] == opponent){
+                oppCount++;
+            } else if (board[k][n - 1 - k] == '-'){
+                if (emptyPos == -1){
+                    emptyPos = k;
+                } else {
+                    emptyPos = -1;
+                    break;
                 }
             }
+        }
+
+        if (oppCount == (n-1) && emptyPos != -1){
+            coords.row = emptyPos;
+            coords.col = n - 1 - emptyPos;
+            return coords;
         }
     }
 
