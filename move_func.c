@@ -28,7 +28,7 @@ bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign
                 printf("Player %c Wins!\n\n", sign);
                 fprintf(gameState, "\nPlayer %c won!\n", sign);
                 return true;
-            } else if (checkDraw(board, n)== 1){
+            } else if (checkDraw(board, n, mode)== 1){
                 printf("It's a draw!\n\n");
                 fprintf(gameState, "\nIt's a draw!\n");
                 return true;
@@ -68,7 +68,7 @@ bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign
                 }
                 return true;
             }
-            else if (checkDraw(board, n)) {
+            else if (checkDraw(board, n, mode)) {
                 printf("It's a draw!\n\n");
                 fprintf(gameState, "\nIt's a draw!\n");
                 return true;
@@ -114,7 +114,7 @@ bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign
                 }
                 return true;
 
-            } else if (checkDraw(board, n) == 1){
+            } else if (checkDraw(board, n, mode) == 1){
                 printf("It's a draw!\n\n");
                 fprintf(gameState, "\nIt's a draw!\n");
                 return true;
@@ -130,79 +130,42 @@ bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign
 }
 
 void validMove(FILE *gameState, char **board, int n, char sign, int *mRow, int *mColumn, int *inputResult){
-    while (*inputResult != 2){
-        printf("\nEnter numbers only. Please try again\n");
-
-        int c = getchar();
-        while (c != '\n'){
-            c = getchar();
-        }
-
-        printf("\nPlayer %c's turn. Please enter coordinate wise - [row][space][column]: ", sign);
-        *inputResult = scanf("%d %d", mRow, mColumn);
-        printf("\n");
-    }
-
-    while ((*mRow > n || *mRow <= 0) || (*mColumn > n || *mColumn <= 0)){
-        printf("Invalid move. Please try again\n");
-        printf("\nPlayer %c's turn. Please enter coordinate wise - [row][space][column]: ", sign);
-        *inputResult = scanf("%d %d", mRow, mColumn);
-        printf("\n");
-
-        // Check if input was successful
+    while (true){
         while (*inputResult != 2){
             printf("Enter numbers only. Please try again\n");
-
-            int c = getchar();
-            while (c != '\n'){
-                c = getchar();
-            }
-
-            printf("\nPlayer %c's turn. Please enter coordinate wise - [row][space][column]: ", sign);
-            *inputResult = scanf("%d %d", mRow, mColumn);
-            printf("\n");
-        }
-    }
-
-    while (*(*(board + (*mRow-1)) + (*mColumn-1)) != '-'){
-        printf("Move already taken. Please try again\n");
-        printf("\nPlayer %c's turn. Please enter coordinate wise - [row][space][column]: ", sign);
-        *inputResult = scanf("%d %d", mRow, mColumn);
-        printf("\n");
-
-        // Check if input was successful and valid coordinates
-        while (*inputResult != 2){
-            printf("Enter numbers only. Please try again\n");
-
-            int c = getchar();
-            while (c != '\n'){
-                c = getchar();
-            }
+            int buffer;
+            while((buffer = getchar()) != '\n');
 
             printf("\nPlayer %c's turn. Please enter coordinate wise - [row][space][column]: ", sign);
             *inputResult = scanf("%d %d", mRow, mColumn);
             printf("\n");
         }
 
-        while ((*mRow > n || *mRow <= 0) || (*mColumn > n || *mColumn <= 0)){
+        if ((*mRow > n || *mRow <= 0) || (*mColumn > n || *mColumn <= 0)){
             printf("Invalid move. Please try again\n");
+
+            int buffer;
+            while((buffer = getchar()) != '\n');
+
             printf("\nPlayer %c's turn. Please enter coordinate wise - [row][space][column]: ", sign);
             *inputResult = scanf("%d %d", mRow, mColumn);
             printf("\n");
-
-            while (*inputResult != 2){
-                printf("Enter numbers only. Please try again\n");
-
-                int c = getchar();
-                while (c != '\n'){
-                    c = getchar();
-                }
-
-                printf("\nPlayer %c's turn. Please enter coordinate wise - [row][space][column]: ", sign);
-                *inputResult = scanf("%d %d", mRow, mColumn);
-                printf("\n");
-            }
+            continue;
         }
+
+        if (*(*(board + (*mRow-1)) + (*mColumn-1)) != '-'){
+            printf("Move already taken. Please try again\n");
+
+            int buffer;
+            while((buffer = getchar()) != '\n');
+
+            printf("\nPlayer %c's turn. Please enter coordinate wise - [row][space][column]: ", sign);
+            *inputResult = scanf("%d %d", mRow, mColumn);
+            printf("\n");
+            continue;
+        }
+
+        break;
     }
 
     *(*(board+(*mRow-1)) + (*mColumn-1)) = sign;
