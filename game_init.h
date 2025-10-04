@@ -19,7 +19,8 @@ typedef struct {
 
 //Function prototypes
 
-char** createBoard(int n);
+void helper();
+char** makeBoard(int n);
 void displayBoard(char **board, int n);
 void freeBoard(char **board, int n);
 bool playTurn(FILE *gameState, int n, int mode, int mRow, int mColumn, char sign, int inputResult, char **board, Player players[]);
@@ -27,9 +28,9 @@ void validMove(FILE *gameState, char **board, int n, char sign, int *mRow, int *
 char switchSign(char sign, int mode);
 bool checkWin(char **board, int n, char sign);
 bool checkDraw(char **board, int n, int mode);
-void computerMove(FILE *gameState, char **board, int n, char sign);
+void computerMove(FILE *gameState, char **board, int n, char sign, int mode);
 Move tryComputerWin(char **board, char sign, int n);
-Move tryComputerBlock(char **board, char sign, int n);
+Move tryComputerBlock(char **board, char sign, int n, int mode);
 void ThreePlayerConfig(Player players[]);
 
 #endif

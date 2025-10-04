@@ -4,30 +4,31 @@
 
 #include "game_init.h"
 
+// function to check if either user has won after a move
 bool checkWin(char **board, int n, char sign){
-    // Diagonal check
-    bool win = true;
+    // diagonal check
+    bool winD = true;
 
     for (int k = 0; k < n; k++) {
         if (board[k][k] != sign) {
-            win = false;
+            winD = false;
             break;
         }
     }
-    if (win) return true;
+    if (winD) return true;
 
-    // Anti-diagonal check
-    win = true;
+    // anti-diagonal check
+    winD = true;
 
     for (int k = 0; k < n; k++) {
         if (board[k][n-1-k] != sign) {
-            win = false;
+            winD = false;
             break;
         }
     }
-    if (win) return true;
+    if (winD) return true;
 
-    // Horizontal check
+    // horizontal check
     for (int row = 0; row < n; row++){
         for (int col = 0; col < 1; col++){
             bool win = true;
@@ -42,7 +43,7 @@ bool checkWin(char **board, int n, char sign){
         }
     }
 
-    // Vertical check
+    // vertical check
     for (int row = 0; row < 1; row++){
         for (int col = 0; col < n; col++){
             bool win = true;
@@ -60,10 +61,12 @@ bool checkWin(char **board, int n, char sign){
     return false;
 }
 
+// function to check if a game will be a draw. Detects it early on in the game if any further moves will be useless
 bool checkDraw(char **board, int n, int mode){
     char players[3];
     int playerNum;
-
+    
+    // hardcoding sign characters into relevant index depending on the game mode
     if (mode == 3) {
         players[0] = 'X';
         players[1] = 'O';
@@ -75,7 +78,9 @@ bool checkDraw(char **board, int n, int mode){
         playerNum = 2;
     }
 
+    // looping for each player
     for (int p = 0; p < playerNum; p++){
+        // assigning cuurent player
         char nowPlayer = players[p];
 
         // checking rows
@@ -114,7 +119,7 @@ bool checkDraw(char **board, int n, int mode){
             }
         }
 
-        if (diagWinPossible) return false;
+        if (diagWinPossible) return false; // because game can continue
 
         diagWinPossible = true;
 
@@ -125,7 +130,7 @@ bool checkDraw(char **board, int n, int mode){
             }
         }
 
-        if (diagWinPossible) return false;
+        if (diagWinPossible) return false; //because game can continue
     }
 
     return true;
